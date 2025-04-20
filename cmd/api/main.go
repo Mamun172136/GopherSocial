@@ -5,6 +5,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/social/internal/env"
+	"github.com/social/internal/store"
 )
 
 func main() {
@@ -18,8 +19,11 @@ func main() {
 		addr: env.GetString("ADDR", ":8080"),
 	}
 
+	store  := store.NewStorage(nil)
+
 	app := &applicaton{
 		config: cfg,
+		store: store,
 	}
 
 	mux := app.mount()
