@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/joho/godotenv"
+	"github.com/social/internal/db"
 	"github.com/social/internal/env"
 	"github.com/social/internal/store"
 )
@@ -17,17 +18,36 @@ func main() {
 
 	cfg := config{
 		addr: env.GetString("ADDR", ":8080"),
+		db : dbConfig{
+		addr: env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost:5433/socialnetwork?sslmode=disable"),
+		maxOpenCons: env.GetInt("DB_MAX_OPEN_CONNS", 30),
+		maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
+		maxIdleTime: env.GetString("DB_MAX_IDLE_TIME", "15m"),
+		},
 	}
 
-	store  := store.NewStorage(nil)
+	db,err := db.New(cfg.db.addr,
+	cfg.db.maxOpenCons,
+	cfg.db.maxIdleConns,
+	cfg.db.maxIdleTime,
 
-	app := &applicaton{
-		config: cfg,
-		store: store,
-	}
+)
+if err != nil {
+	log.Panic(err)
+}
 
-	mux := app.mount()
-	log.Fatal(app.run(mux))
+defer db.Close()
+log.Println("db connect")
+
+store  := store.NewStorage(db)
+
+app := &applicaton{
+	config: cfg,
+	store: store,
+}
+
+mux := app.mount()
+log.Fatal(app.run(mux))
 }
 
 // package main
