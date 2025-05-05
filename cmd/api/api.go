@@ -10,7 +10,7 @@ import (
 	"github.com/social/internal/store"
 )
 
-type applicaton struct {
+type application struct {
 	config config
 	store   store.Storage
 }
@@ -27,7 +27,7 @@ type dbConfig struct {
 	maxIdleTime		string
 }
 
-func (app *applicaton) mount() *chi.Mux{
+func (app *application) mount() *chi.Mux{
 	// mux := http.NewServeMux()
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -35,6 +35,12 @@ func (app *applicaton) mount() *chi.Mux{
 	// mux.HandleFunc("GET /v1/health", app.healthCheckerHandler)
 	r.Route("/v1", func(r chi.Router){
 		r.Get("/health", app.healthCheckerHandler)
+
+		r.Route("/posts", func(r chi.Router){
+			r.Post("/", app.createPostHandler)
+			
+			
+		})
 	})
 
 	// posts
@@ -45,7 +51,7 @@ func (app *applicaton) mount() *chi.Mux{
 	return r
 }
 
-func (app *applicaton) run(mux *chi.Mux) error {
+func (app *application) run(mux *chi.Mux) error {
 	// mux := http.NewServeMux()
 
 

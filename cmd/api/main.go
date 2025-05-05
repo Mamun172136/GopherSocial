@@ -41,7 +41,7 @@ log.Println("db connect")
 
 store  := store.NewStorage(db)
 
-app := &applicaton{
+app := &application{
 	config: cfg,
 	store: store,
 }
