@@ -49,7 +49,10 @@ func (app *application) mount() *chi.Mux{
 
 		r.Route("/users", func(r chi.Router){
 			r.Route("/{userId}", func(r chi.Router){
+				r.Use(app.userContextMiddleware)
 				r.Get("/", app.getUserHandler)
+				r.Put("/", app.followUserHandler)
+				r.Put("/", app.unfollowUserHandler)
 			})
 		})
 	})

@@ -8,6 +8,7 @@ import (
 
 
 var ErrNotFound=errors.New("record Not Found")
+var ErrConflict  = errors.New("resource already exists")
 
 type Storage struct {
 	Posts interface {
@@ -23,6 +24,10 @@ type Storage struct {
 	Comments interface{
 		GetByPostID(context.Context, int64) ([]Comment,error)
 	}
+	Followers interface{
+		Follow(context.Context,int64, int64  ) error
+		Unfollow(context.Context, int64, int64) error
+	}
 }
 
 func NewStorage(db *sql.DB) Storage {
@@ -30,5 +35,6 @@ func NewStorage(db *sql.DB) Storage {
 		Posts:  &PostsStore{db},
 		Users:  &UsersStore{db},
 		Comments: &CommentStore{db},
+		Followers: &FollowerStore{db},
 	}
 }
