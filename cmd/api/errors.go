@@ -27,6 +27,22 @@ func (app *application) notFoundResponse(w http.ResponseWriter, r *http.Request,
 	writeJSONError(w, http.StatusNotFound, "not found")
 }
 
+func (app *application) unauthorizedErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	log.Printf("not found  method: %s url path:%s %s",r.Method, r.URL.Path, err)
+
+
+	writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+}
+
+func (app *application) unauthorizedBasicErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	log.Printf("not found  method: %s url path:%s %s",r.Method, r.URL.Path, err)
+
+
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+
+	writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+}
+
 
 
 

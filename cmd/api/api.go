@@ -18,6 +18,15 @@ type application struct {
 type config struct {
 	addr string
 	db 	dbConfig
+	auth authConfig
+}
+type authConfig struct{
+	basic basicConfig
+}
+
+type basicConfig struct{
+	user string
+	pass string
 }
 
 type dbConfig struct {

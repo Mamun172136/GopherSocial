@@ -24,6 +24,14 @@ func main() {
 		maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 		maxIdleTime: env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
+
+		auth: authConfig{
+			basic : basicConfig{
+				user: env.GetString("AUTH_BASIC_USER", "admin"),
+				pass: env.GetString("AUTH_BASIC_PASS", "admin"),
+			},
+		},
+
 	}
 
 	db,err := db.New(cfg.db.addr,
