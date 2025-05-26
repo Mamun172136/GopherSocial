@@ -29,15 +29,19 @@ type FollowUser struct{
 
 func ( app *application) followUserHandler(w http.ResponseWriter, r *http.Request){
 	followerUser := getUserFromContext(r)
-
-	var payload FollowUser
-	if err := readJson(w, r, &payload); err !=nil{
+	FollowedId, err := strconv.ParseInt(chi.URLParam(r,"userID"),10,64)
+	if err != nil{
 		app.badRequestResponse(w,r,err)
 		return
 	}
+	// var payload FollowUser
+	// if err := readJson(w, r, &payload); err !=nil{
+	// 	app.badRequestResponse(w,r,err)
+	// 	return
+	// }
 
 	ctx := r.Context()
-	err:= app.store.Followers.Follow(ctx, followerUser.ID, payload.UserID)
+	err = app.store.Followers.Follow(ctx, followerUser.ID, FollowedId)
 	if err != nil{
 		switch err {
 		case store.ErrConflict:

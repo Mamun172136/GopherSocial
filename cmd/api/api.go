@@ -7,12 +7,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/social/internal/auth"
 	"github.com/social/internal/store"
 )
 
 type application struct {
 	config config
 	store   store.Storage
+	authenticator auth.Authenticator
 }
 
 type config struct {
@@ -22,6 +24,13 @@ type config struct {
 }
 type authConfig struct{
 	basic basicConfig
+	token tokenConfig
+}
+
+type tokenConfig struct {
+	secret string
+	exp    time.Duration
+	iss    string
 }
 
 type basicConfig struct{
@@ -68,6 +77,10 @@ func (app *application) mount() *chi.Mux{
 			
 				r.Get("/feed", app.getUserFeedHandler)
 			})
+		})
+
+		r.Route("/authentication", func(r chi.Router) {
+			r.Post("/token", app.createTokenHandler)
 		})
 	})
 
