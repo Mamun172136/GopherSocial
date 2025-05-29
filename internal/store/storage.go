@@ -4,11 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 
 var ErrNotFound=errors.New("record Not Found")
 var ErrConflict  = errors.New("resource already exists")
+var  ErrDuplicateEmail  = errors.New("a user with that email already exists")
+var ErrDuplicateUsername = errors.New("a user with that username already exists")
+var QueryTimeoutDuration = time.Second * 5
 
 type Storage struct {
 	Posts interface {
@@ -30,6 +34,9 @@ type Storage struct {
 		Follow(context.Context,int64, int64  ) error
 		Unfollow(context.Context, int64, int64) error
 	}
+	Roles interface {
+		GetByName(context.Context, string) (*Role, error)
+	}
 }
 
 func NewStorage(db *sql.DB) Storage {
@@ -38,5 +45,6 @@ func NewStorage(db *sql.DB) Storage {
 		Users:  &UsersStore{db},
 		Comments: &CommentStore{db},
 		Followers: &FollowerStore{db},
+		Roles:     &RoleStore{db},
 	}
 }

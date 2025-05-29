@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -78,7 +79,7 @@ func (app *application)getPostHandler(w http.ResponseWriter, r *http.Request){
 	// 	return
 	// }
 	post := getPostFromCtx(r)
-
+    
 	comments, err := app.store.Comments.GetByPostID(r.Context(), post.ID)
 	if err != nil {
 		app.internalServerError(w, r, err)
@@ -159,6 +160,7 @@ func (app *application) postsContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		idParam := chi.URLParam(r, "postID")
 		id, err := strconv.ParseInt(idParam, 10, 64)
+
 		if err != nil {
 			app.internalServerError(w, r, err)
 			return
@@ -172,6 +174,7 @@ func (app *application) postsContextMiddleware(next http.Handler) http.Handler {
 			case errors.Is(err, store.ErrNotFound):
 				app.notFoundResponse(w, r, err)
 			default:
+				fmt.Println("--------176-------")
 				app.internalServerError(w, r, err)
 			}
 			return

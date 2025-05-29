@@ -118,8 +118,8 @@ func (s *PostsStore) Update(ctx context.Context, post *Post) error {
 		
 	`
 
-	// ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	_,err := s.db.ExecContext(
 		ctx,

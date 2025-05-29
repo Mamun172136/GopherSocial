@@ -13,13 +13,16 @@ type User struct {
 	Email     string   `json:"email"`
 	Password  password  `json:"-"`
 	CreatedAt string   `json:"created_at"`
-	
+	RoleID		int64	`json:"role_id"`
+	Role      Role     `json:"role"`
 }
 
 type password struct {
 	text *string
 	hash []byte
 }
+
+
 
 func (p *password) Set(text string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(text), bcrypt.DefaultCost)
@@ -42,46 +45,57 @@ type UsersStore struct {
 }
 
 func (s *UsersStore) Create(ctx context.Context, user *User) error {
-	query := `
-		INSERT INTO posts (username,  password, email) VALUES (&1,&2, &3, &4) RETURNING id, created_at, updated_at
+query := `
+		INSERT INTO users (username, password, email, role_id) VALUES 
+    ($1, $2, $3, (SELECT id FROM roles WHERE name = $4))
+    RETURNING id, created_at
 	`
 
-	// ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
-	// defer cancel()
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
-	
-
+	role := user.Role.Name
+	if role == "" {
+		role = "user"
+	}
 
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
 		user.Username,
-		user.Password,
+		user.Password.hash,
 		user.Email,
-	
+		role,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
 	)
-	if err != nil {
-		
+	
+if err != nil {
+		switch {
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_email_key"`:
+			return ErrDuplicateEmail
+		case err.Error() == `pq: duplicate key value violates unique constraint "users_username_key"`:
+			return ErrDuplicateUsername
+		default:
 			return err
 		}
+	}
 	
-
 	return nil
 }
 
 func (s *UsersStore) GetByID(ctx context.Context, userID int64)(*User, error){
 	query := `
-		SELECT users.id, username, email, password, created_at,
+	SELECT users.id, username, email, password, created_at, roles.*
 		FROM users
-		
+		JOIN roles ON (users.role_id = roles.id)
 		WHERE users.id = $1 
-	`
 
-	// ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
-	// defer cancel()
+	`
+// todo join
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
 
 	user := &User{}
 	err := s.db.QueryRowContext(
@@ -92,7 +106,12 @@ func (s *UsersStore) GetByID(ctx context.Context, userID int64)(*User, error){
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		
+		&user.Password.hash,
+		&user.CreatedAt,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Level,
+		&user.Role.Description,
 	)
 	if err != nil {
 		switch err {

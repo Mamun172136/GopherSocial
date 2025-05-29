@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"strconv"
@@ -13,7 +14,7 @@ import (
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request){
 
 	user:= getUserFromContext(r)
-
+fmt.Println("-------17------")
 	if err := writeJSON(w, http.StatusOK,user); err!= nil{
 		app.internalServerError(w,r,err)
 	}
@@ -104,6 +105,7 @@ func (app *application) userContextMiddleware(next http.Handler)http.Handler{
 
 		default:
 			app.internalServerError(w,r,err)
+			fmt.Print("error")
 			return
 		}
 		
