@@ -4,11 +4,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/joho/godotenv"
 	"github.com/social/internal/auth"
 	"github.com/social/internal/db"
 	"github.com/social/internal/env"
 	"github.com/social/internal/store"
+	"github.com/social/internal/store/cache"
 )
 
 func main() {
@@ -26,7 +28,12 @@ func main() {
 		maxIdleConns: env.GetInt("DB_MAX_IDLE_CONNS", 30),
 		maxIdleTime: env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
-
+		redisCfg: redisConfig{
+			addr:    env.GetString("REDIS_ADDR", "localhost:6379"),
+			pw:      env.GetString("REDIS_PW", ""),
+			db:      env.GetInt("REDIS_DB", 0),
+			enabled: env.GetBool("REDIS_ENABLED", false),
+		},
 		auth: authConfig{
 			basic : basicConfig{
 				user: env.GetString("AUTH_BASIC_USER", "admin"),
@@ -54,8 +61,17 @@ if err != nil {
 defer db.Close()
 log.Println("db connect")
 
+//cache
+var rdb *redis.Client
+	if cfg.redisCfg.enabled {
+		rdb = cache.NewRedisClient(cfg.redisCfg.addr, cfg.redisCfg.pw, cfg.redisCfg.db)
+		
+		defer rdb.Close()
+	}
+
 store  := store.NewStorage(db)
 
+cacheStorage := cache.NewRedisStorage(rdb)
 // Authenticator
 	jwtAuthenticator := auth.NewJWTAuthenticator(
 		cfg.auth.token.secret,
@@ -67,6 +83,7 @@ app := &application{
 	config: cfg,
 	store: store,
 	authenticator: jwtAuthenticator,
+	cacheStorage:  cacheStorage,
 }
 
 mux := app.mount()

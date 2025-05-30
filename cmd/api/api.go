@@ -9,19 +9,30 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/social/internal/auth"
 	"github.com/social/internal/store"
+	"github.com/social/internal/store/cache"
 )
 
 type application struct {
 	config config
 	store   store.Storage
 	authenticator auth.Authenticator
+	cacheStorage  cache.Storage
 }
 
 type config struct {
 	addr string
 	db 	dbConfig
 	auth authConfig
+	redisCfg    redisConfig
 }
+
+type redisConfig struct {
+	addr    string
+	pw      string
+	db      int
+	enabled bool
+}
+
 type authConfig struct{
 	basic basicConfig
 	token tokenConfig
