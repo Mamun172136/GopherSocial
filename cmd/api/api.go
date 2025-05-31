@@ -80,7 +80,7 @@ func (app *application) mount() *chi.Mux{
 		r.Route("/users", func(r chi.Router){
 			r.Put("/create", app.registerUserHandler)
 			r.Route("/{userID}", func(r chi.Router){
-
+				r.Use(app.AuthTokenMiddleware)
 				r.Use(app.userContextMiddleware)
 				r.Get("/", app.getUserHandler)
 				r.Put("/follow", app.followUserHandler)
