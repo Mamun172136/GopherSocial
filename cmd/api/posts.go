@@ -189,3 +189,44 @@ func getPostFromCtx(r *http.Request) *store.Post {
 	post, _ := r.Context().Value(postCtx).(*store.Post)
 	return post
 }
+
+type  createCommentPayload struct{
+	Content string `json:"content"`
+}
+
+func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
+	var payload createCommentPayload
+
+	if err := readJson(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	user := getUserFromContext(r)
+	post := getPostFromCtx(r)
+
+	comment := &store.Comment{
+		UserID:  user.ID,
+		PostID:  post.ID,
+		Content: payload.Content,
+	}
+
+	if err := app.store.Comments.Create(r.Context(), comment); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	// Optionally, load the user data in comment.User for response
+	comment.User = *user
+
+	if err := writeJSON(w, http.StatusCreated, comment); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+

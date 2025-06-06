@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/social/internal/auth"
+	"github.com/social/internal/ratelimiter"
 	"github.com/social/internal/store"
 	"github.com/social/internal/store/cache"
 )
@@ -17,6 +18,7 @@ type application struct {
 	store   store.Storage
 	authenticator auth.Authenticator
 	cacheStorage  cache.Storage
+	rateLimiter   ratelimiter.Limiter
 }
 
 type config struct {
@@ -24,6 +26,7 @@ type config struct {
 	db 	dbConfig
 	auth authConfig
 	redisCfg    redisConfig
+	rateLimiter ratelimiter.Config
 }
 
 type redisConfig struct {
@@ -59,8 +62,11 @@ type dbConfig struct {
 func (app *application) mount() *chi.Mux{
 	// mux := http.NewServeMux()
 	r := chi.NewRouter()
+	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
-
+	if app.config.rateLimiter.Enabled {
+		r.Use(app.RateLimiterMiddleware)
+	}
 	// mux.HandleFunc("GET /v1/health", app.healthCheckerHandler)
 	r.Route("/v1", func(r chi.Router){
 		r.Get("/health", app.healthCheckerHandler)
@@ -72,6 +78,7 @@ func (app *application) mount() *chi.Mux{
 			r.Route("/{postID}", func (r chi.Router){
 				r.Use(app.postsContextMiddleware)
 				r.Get("/",app.getPostHandler)
+				r.Post("/comments", app.createCommentHandler)
 				r.Delete("/", app.deletePostHandler)
 				r.Patch("/",app.updatePostHandler)
 			})

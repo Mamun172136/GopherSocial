@@ -9,6 +9,7 @@ import (
 	"github.com/social/internal/auth"
 	"github.com/social/internal/db"
 	"github.com/social/internal/env"
+	"github.com/social/internal/ratelimiter"
 	"github.com/social/internal/store"
 	"github.com/social/internal/store/cache"
 )
@@ -45,6 +46,11 @@ func main() {
 				iss:    "gophersocial",
 			},
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestsPerTimeFrame: env.GetInt("RATELIMITER_REQUESTS_COUNT", 20),
+			TimeFrame:            time.Second * 5,
+			Enabled:              env.GetBool("RATE_LIMITER_ENABLED", true),
+		},
 
 	}
 
@@ -72,6 +78,14 @@ var rdb *redis.Client
 store  := store.NewStorage(db)
 
 cacheStorage := cache.NewRedisStorage(rdb)
+
+// Rate limiter
+	rateLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestsPerTimeFrame,
+		cfg.rateLimiter.TimeFrame,
+	)
+
+
 // Authenticator
 	jwtAuthenticator := auth.NewJWTAuthenticator(
 		cfg.auth.token.secret,
@@ -84,6 +98,7 @@ app := &application{
 	store: store,
 	authenticator: jwtAuthenticator,
 	cacheStorage:  cacheStorage,
+	rateLimiter:   rateLimiter,
 }
 
 mux := app.mount()
